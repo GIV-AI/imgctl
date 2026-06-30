@@ -11,7 +11,7 @@ A scalable command-line tool for managing and viewing container images across NV
 - Filter out Kubernetes system images using an ignore list
 - Export data in multiple formats (table, JSON, CSV)
 
-Designed for BCM (Base Command Manager) clusters running Kubernetes on NVIDIA DGX H200 servers.
+Designed for BCM (Base Command Manager) clusters running Kubernetes on NVIDIA DGX servers (e.g. H100/H200).
 
 ## Features
 
@@ -34,50 +34,29 @@ Designed for BCM (Base Command Manager) clusters running Kubernetes on NVIDIA DG
 - `parallel` (GNU parallel - optional but recommended for performance)
 - SSH access to worker nodes (key-based authentication recommended)
 - `crictl` installed on worker nodes
+- **Web GUI only:** Python 3.8+ (standard library; no pip packages) and `systemd` — the CLI itself needs neither
 
 ## Quick Start
 
 ### Installation
 
 ```bash
-# Clone or copy the project to the head node
+# Clone the repo onto the head node
+git clone https://github.com/GIV-AI/imgctl.git ~/imgctl
 cd ~/imgctl
+# (Repo layout is documented under "Source Repository Structure" below.)
 
-# Ensure correct directory structure
-tree
-# Expected:
-# .
-# ├── bin/
-# │   └── imgctl
-# ├── conf/
-# │   └── imgctl.conf
-# ├── docs/
-# │   ├── ARCHITECTURE.md
-# │   ├── CONFIGURATION.md
-# │   ├── DATA_FLOW.md
-# │   └── QUICK_REFERENCE.md
-# ├── lib/
-# │   ├── common.sh
-# │   ├── crictl.sh
-# │   ├── harbor.sh
-# │   └── output.sh
-# ├── images_to_ignore.txt
-# ├── install.sh
-# ├── uninstall.sh
-# └── README.md
-
-# Run installation
+# Run installation (installs the CLI and the optional Web GUI; --no-gui to skip the GUI)
 chmod +x install.sh
 sudo ./install.sh
 ```
 
 The installer will automatically:
 - Install dependencies (`jq`, `curl`) if missing
-- Copy files to `/opt/imgctl/`
-- Install configuration to `/etc/imgctl/imgctl.conf`
-- Copy the ignore list to `/etc/imgctl/images_to_ignore.txt`
+- Copy files to `/opt/imgctl/` and create the symlink at `/usr/local/bin/imgctl`
+- Install the config + ignore list to `/etc/imgctl/` **only if absent** — an existing `imgctl.conf` / `images_to_ignore.txt` is backed up and **preserved** (your tuned values are kept)
 - Create log and cache directories
-- Create symlink at `/usr/local/bin/imgctl`
+- **Install the Web GUI** (`/opt/imgctl/web`, snapshot dir `/var/lib/imgcatalog`, and the `imgcatalog.service` + `imgcatalog-refresh.timer` units), then print the manual firewall step — pass `--no-gui` to skip the GUI
 
 ### Enable for Non-Root Users (Optional)
 
@@ -406,6 +385,8 @@ imgctl/                         # Project root
 ├── conf/imgctl.conf            # Default configuration template
 ├── docs/                       # Documentation
 │   ├── ARCHITECTURE.md         # System architecture diagrams
+│   ├── ARCHITECTURE_DIAGRAMS.md# Web GUI architecture + sequence diagrams (Mermaid)
+│   ├── Cluster-Image-Portal-Architecture.pdf  # Rendered diagrams (PDF)
 │   ├── CONFIGURATION.md        # Configuration guide
 │   ├── DATA_FLOW.md            # Data flow documentation
 │   ├── QUICK_REFERENCE.md      # Quick reference guide
@@ -429,6 +410,8 @@ imgctl/                         # Project root
 ├── images_to_ignore.txt        # Default ignore list
 ├── install.sh                  # Installation script (installs CLI + GUI)
 ├── uninstall.sh                # Uninstallation script (backs up config first)
+├── .gitignore                  # Ignores __pycache__, *.bak.*
+├── .gitattributes              # Enforce LF line endings; mark binaries
 └── README.md                   # This file
 ```
 
@@ -564,7 +547,7 @@ imgctl get
 sudo ./uninstall.sh
 ```
 
-The uninstaller will prompt before removing configuration and logs.
+The uninstaller **backs up `imgctl.conf` + `images_to_ignore.txt`** to `/var/backups/imgctl/<timestamp>/` before removing anything, tears down the Web GUI (stops/removes the `imgcatalog` units and `/var/lib/imgcatalog`), removes `/opt/imgctl`, prompts before deleting config/logs, and **reminds you to remove the firewall port manually** via `cmsh` (it never touched the firewall). The GUI is additive — removing it doesn't affect Harbor, K8s, or the cluster.
 
 ## Architecture
 
@@ -589,6 +572,8 @@ The uninstaller will prompt before removing configuration and logs.
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+> The diagram above is the **CLI**. For the **Web GUI** architecture and sequence diagrams (the root producer → snapshot → unprivileged web service, plus the refresh and request paths), see [docs/ARCHITECTURE_DIAGRAMS.md](docs/ARCHITECTURE_DIAGRAMS.md).
+
 ## Documentation
 
 Detailed documentation is available in the `docs/` directory:
@@ -600,6 +585,7 @@ Detailed documentation is available in the `docs/` directory:
 | [CONFIGURATION.md](docs/CONFIGURATION.md) | Complete configuration guide with examples for different environments |
 | [QUICK_REFERENCE.md](docs/QUICK_REFERENCE.md) | One-page visual guide with command cheat sheet and troubleshooting |
 | [WEB_UI.md](docs/WEB_UI.md) | Web GUI (Cluster Image Portal): architecture, install, the manual firewall step, operate/troubleshoot/rollback |
+| [ARCHITECTURE_DIAGRAMS.md](docs/ARCHITECTURE_DIAGRAMS.md) | Web GUI architecture + sequence diagrams (Mermaid) — rendered PDF: [Cluster-Image-Portal-Architecture.pdf](docs/Cluster-Image-Portal-Architecture.pdf) |
 
 ### Quick Links
 
