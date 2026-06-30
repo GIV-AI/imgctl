@@ -72,13 +72,20 @@ exactly what the CLI does). It does **not** touch the firewall (see next).
 ## 4. Open the firewall port — MANUAL admin step
 
 The portal listens on **TCP `WEB_PORT`** (default `8088`). The scripts never modify the
-firewall; an admin opens it once. On a BCM head node use `cmsh` — **do not hand-edit
-`/etc/shorewall/rules`**, CMDaemon regenerates it:
+firewall; an admin opens it once. On a BCM head node run `cmsh` **interactively** and enter the
+commands **one per line** — **do not hand-edit `/etc/shorewall/rules`** (CMDaemon regenerates
+it), and note that non-interactive `cmsh -c "…"` does **not** reliably commit:
 
 ```
 cmsh
-% device; use $(hostname -s); roles; use firewall
-% openports; add ACCEPT net 8088 tcp fw; commit
+device
+use <head-node-hostname>      # e.g. vips-headnode
+roles
+use firewall
+openports
+add ACCEPT net 8088 tcp fw
+commit
+quit
 ```
 
 Verify, then share the URL:
@@ -179,12 +186,18 @@ stat -c '%y %s bytes' /var/lib/imgcatalog/all.json    # snapshot freshness/size
 `sudo ./uninstall.sh` stops + removes the three units and `/var/lib/imgcatalog`, removes
 `/opt/imgctl` (incl. `web/`), and **backs up `imgctl.conf` + `images_to_ignore.txt` to
 `/var/backups/imgctl/<timestamp>/` before removing anything**. It then reminds you to remove
-the firewall rule manually:
+the firewall rule manually (run `cmsh` interactively, one command per line):
 
 ```
 cmsh
-% device; use $(hostname -s); roles; use firewall
-% openports; remove ACCEPT net 8088 tcp fw; commit
+device
+use <head-node-hostname>
+roles
+use firewall
+openports
+remove ACCEPT net 8088 tcp fw
+commit
+quit
 ```
 
 The GUI is purely additive — removing it does not affect the `imgctl` CLI, Harbor, or the

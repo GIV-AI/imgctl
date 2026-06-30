@@ -237,10 +237,17 @@ fi
 echo ""
 
 # Remind about the manual firewall rule (the installer never touched it, so we don't either)
-echo -e "${YELLOW}Note:${NC} If you opened a firewall port for the Web GUI, remove it manually via cmsh:"
+echo -e "${YELLOW}Note:${NC} If you opened a firewall port for the Web GUI, remove it manually."
+echo "  Run cmsh INTERACTIVELY and enter these commands, one per line:"
 echo -e "    ${CYAN}cmsh${NC}"
-echo -e "    ${CYAN}% device; use \$(hostname -s); roles; use firewall${NC}"
-echo -e "    ${CYAN}% openports; remove ACCEPT net 8088 tcp fw; commit${NC}"
+echo -e "    ${CYAN}device${NC}"
+echo -e "    ${CYAN}use $(hostname -s)${NC}"
+echo -e "    ${CYAN}roles${NC}"
+echo -e "    ${CYAN}use firewall${NC}"
+echo -e "    ${CYAN}openports${NC}"
+echo -e "    ${CYAN}remove ACCEPT net 8088 tcp fw${NC}"
+echo -e "    ${CYAN}commit${NC}"
+echo -e "    ${CYAN}quit${NC}"
 echo "  (Adjust the port if you changed WEB_PORT.)"
 echo ""
 

@@ -313,15 +313,35 @@ sudo rm -rf /var/cache/imgctl/*.cache
 
 ### Open the firewall port (manual admin step)
 
-The installer never modifies the firewall. The portal listens on **TCP 8088** by default (`WEB_PORT`). On a BCM head node, open it with `cmsh` (do **not** hand‑edit `/etc/shorewall/rules` — CMDaemon regenerates it):
+The installer never modifies the firewall. The portal listens on **TCP 8088** by default (`WEB_PORT`). On a BCM head node, run `cmsh` **interactively** and enter these commands **one per line** (do **not** hand‑edit `/etc/shorewall/rules` — CMDaemon regenerates it; non‑interactive `cmsh -c "…"` does **not** reliably commit):
 
 ```
 cmsh
-% device; use $(hostname -s); roles; use firewall
-% openports; add ACCEPT net 8088 tcp fw; commit
+device
+use <head-node-hostname>      # e.g. vips-headnode
+roles
+use firewall
+openports
+add ACCEPT net 8088 tcp fw
+commit
+quit
 ```
 
-Then browse to `http://<head-node-host-or-ip>:8088/`. To remove it later: `% openports; remove ACCEPT net 8088 tcp fw; commit`.
+Then browse to `http://<head-node-host-or-ip>:8088/`.
+
+**To remove the port later**, run `cmsh` interactively again and replace `add` with `remove`:
+
+```
+cmsh
+device
+use <head-node-hostname>
+roles
+use firewall
+openports
+remove ACCEPT net 8088 tcp fw
+commit
+quit
+```
 
 > **Exposure:** the portal has **no authentication**, and with `WEB_BIND_ADDRESS=0.0.0.0` it is reachable by anyone who can reach the port (intended for remote team access via the head node's IP). It exposes only image names/tags/sizes (read‑only). Scope the source or front it with auth if that inventory is sensitive.
 
