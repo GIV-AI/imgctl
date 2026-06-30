@@ -122,6 +122,32 @@ echo ""
 echo -e "${BLUE}Removing $COMMAND_NAME...${NC}"
 echo ""
 
+# --- Back up config + ignore list BEFORE removing anything ---
+BACKUP_DIR="/var/backups/imgctl/$(date +%Y%m%d-%H%M%S)"
+if [[ -f "$CONFIG_DIR/imgctl.conf" || -f "$CONFIG_DIR/images_to_ignore.txt" ]]; then
+    mkdir -p "$BACKUP_DIR"
+    [[ -f "$CONFIG_DIR/imgctl.conf" ]] && cp -f -- "$CONFIG_DIR/imgctl.conf" "$BACKUP_DIR/"
+    [[ -f "$CONFIG_DIR/images_to_ignore.txt" ]] && cp -f -- "$CONFIG_DIR/images_to_ignore.txt" "$BACKUP_DIR/"
+    echo -e "${GREEN}✓${NC} Backed up config + ignore list to: ${BOLD}$BACKUP_DIR${NC}"
+fi
+
+# --- Tear down the Web GUI (stop services first, then remove units + state) ---
+if command -v systemctl >/dev/null 2>&1; then
+    systemctl disable --now imgcatalog.service       >/dev/null 2>&1 || true
+    systemctl disable --now imgcatalog-refresh.timer >/dev/null 2>&1 || true
+    systemctl stop          imgcatalog-refresh.service >/dev/null 2>&1 || true
+    rm -f -- /etc/systemd/system/imgcatalog.service \
+             /etc/systemd/system/imgcatalog-refresh.service \
+             /etc/systemd/system/imgcatalog-refresh.timer
+    systemctl daemon-reload >/dev/null 2>&1 || true
+    echo -e "${GREEN}✓${NC} Removed Web GUI services (imgcatalog.service / imgcatalog-refresh.timer)"
+fi
+if [[ -e "/var/lib/imgcatalog" ]]; then
+    if safe_remove_dir "/var/lib/imgcatalog"; then
+        echo -e "${GREEN}✓${NC} Removed /var/lib/imgcatalog (snapshot)"
+    fi
+fi
+
 # Remove symlink (verify it points to our installation)
 if [[ -L "$BIN_DIR/$COMMAND_NAME" ]]; then
     if safe_remove_symlink "$BIN_DIR/$COMMAND_NAME" "$INSTALL_DIR/bin/$COMMAND_NAME"; then
@@ -207,6 +233,14 @@ if [[ -n "$INVOKING_USER_HOME" ]] && [[ "$INVOKING_USER_HOME" != "$ROOT_HOME" ]]
     fi
 fi
 
+echo ""
+
+# Remind about the manual firewall rule (the installer never touched it, so we don't either)
+echo -e "${YELLOW}Note:${NC} If you opened a firewall port for the Web GUI, remove it manually via cmsh:"
+echo -e "    ${CYAN}cmsh${NC}"
+echo -e "    ${CYAN}% device; use \$(hostname -s); roles; use firewall${NC}"
+echo -e "    ${CYAN}% openports; remove ACCEPT net 8088 tcp fw; commit${NC}"
+echo "  (Adjust the port if you changed WEB_PORT.)"
 echo ""
 
 # Remind about optional sudoers/alias files

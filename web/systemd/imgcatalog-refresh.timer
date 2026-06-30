@@ -1,0 +1,16 @@
+# ============================================================================
+# imgctl Cluster Image Portal - refresh timer
+# Installed to /etc/systemd/system/imgcatalog-refresh.timer by install.sh
+# Refreshes the image snapshot every 5 minutes (matches imgctl's 300s cache).
+# ============================================================================
+[Unit]
+Description=Refresh imgctl Cluster Image Portal snapshot every 5 minutes
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=5min
+AccuracySec=30s
+Persistent=true
+
+[Install]
+WantedBy=timers.target

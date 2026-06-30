@@ -24,6 +24,7 @@ Designed for BCM (Base Command Manager) clusters running Kubernetes on NVIDIA DG
 - **Multiple Output Formats**: Table, JSON, CSV
 - **Caching**: Reduce API calls with configurable TTL cache
 - **Day-wise Logging**: Automatic log rotation in `/var/log/giindia/imgctl/`
+- **Web GUI (optional)**: a read-only, NVIDIA/Run:ai-themed browser portal + JSON API so users can browse images and copy pull references without SSH (see [Web GUI](#web-gui-cluster-image-portal))
 
 ## Requirements
 
@@ -298,6 +299,56 @@ echo "docker.io/library/busybox,latest,abc123,2MB" >> /etc/imgctl/images_to_igno
 sudo rm -rf /var/cache/imgctl/*.cache
 ```
 
+## Web GUI (Cluster Image Portal)
+
+`imgctl` ships an optional **read-only web portal + JSON API** so end users (e.g. Run:ai users working entirely in a browser) can see the same images `imgctl` lists — and copy the exact pull reference — **without SSH-ing into the head node**.
+
+- **What it shows:** the same data as `imgctl get all` (Harbor registry images + worker‑cached images). Images are shown **faithfully** — if a custom image is both pushed to Harbor *and* cached on the worker, it appears as two rows (one per source), distinguished by a source badge, because the two copies live in different storage.
+- **How it works (decoupled producer/consumer):** a root `imgcatalog-refresh.timer` runs `imgctl get all -o json` every ~5 minutes and atomically writes `/var/lib/imgcatalog/all.json`; an **unprivileged** Python‑stdlib web service (`imgcatalog.service`) only reads that snapshot and serves the UI + API. The slow head→worker SSH never sits on the request path, and a transient failure keeps serving the last‑good data with a "stale" banner.
+- **Zero extra dependencies:** Python 3 standard library only (no pip/venv); the UI is a single static page (no build step, no CDN).
+
+### Install
+
+`sudo ./install.sh` installs the GUI automatically (pass `--no-gui` to skip). It copies the portal to `/opt/imgctl/web`, installs and enables the systemd units, and writes the first snapshot. It will **not** overwrite an existing `/etc/imgctl/imgctl.conf` or `images_to_ignore.txt` — it backs them up and keeps your tuned values, so the portal shows exactly what the CLI does.
+
+### Open the firewall port (manual admin step)
+
+The installer never modifies the firewall. The portal listens on **TCP 8088** by default (`WEB_PORT`). On a BCM head node, open it with `cmsh` (do **not** hand‑edit `/etc/shorewall/rules` — CMDaemon regenerates it):
+
+```
+cmsh
+% device; use $(hostname -s); roles; use firewall
+% openports; add ACCEPT net 8088 tcp fw; commit
+```
+
+Then browse to `http://<head-node-host-or-ip>:8088/`. To remove it later: `% openports; remove ACCEPT net 8088 tcp fw; commit`.
+
+> **Exposure:** the portal has **no authentication**, and with `WEB_BIND_ADDRESS=0.0.0.0` it is reachable by anyone who can reach the port (intended for remote team access via the head node's IP). It exposes only image names/tags/sizes (read‑only). Scope the source or front it with auth if that inventory is sensitive.
+
+### Configuration
+
+All keys live in `/etc/imgctl/imgctl.conf` (the GUI reuses imgctl's config and ignore list):
+
+| Setting | Description | Default |
+|---|---|---|
+| `WEB_PORT` | Portal TCP port | `8088` |
+| `WEB_BIND_ADDRESS` | Listener address (`0.0.0.0` = all interfaces) | `0.0.0.0` |
+| `WEB_SNAPSHOT_PATH` | Snapshot the producer writes / server reads | `/var/lib/imgcatalog/all.json` |
+| `WEB_STALE_AFTER` | Seconds before the UI flags data stale | `900` |
+| `WEB_HARBOR_REGISTRY_HOST` | Host prefixed to custom‑image pull refs (blank → from `HARBOR_URL`) | _(blank)_ |
+| `WEB_SITE_TITLE` | Header title | `Cluster Image Portal` |
+| `WEB_SITE_SUBTITLE` | Header subtitle (blank → `CLUSTER_NAME`) | _(blank)_ |
+| `WEB_LABEL_HARBOR` | Badge/label for registry images | `Harbor` |
+| `WEB_LABEL_NODE` | Badge/label for worker‑cached images (e.g. `DGX cache`) | `Node` |
+
+Nothing institute‑ or hardware‑specific is hardcoded in the app — the header/badge text above is config‑driven. Changes appear within one refresh cycle (or run `sudo /opt/imgctl/web/refresh.sh`).
+
+### Endpoints
+
+`GET /` (UI) · `GET /api/images` (flattened JSON with the exact pull `reference` per image) · `GET /api/raw` (imgctl passthrough) · `GET /healthz` · `GET /version`.
+
+> Full operate / troubleshoot / rollback runbook: **[docs/WEB_UI.md](docs/WEB_UI.md)**.
+
 ## Directory Structure
 
 ### Installation Paths
@@ -337,19 +388,27 @@ imgctl/                         # Project root
 │   ├── ARCHITECTURE.md         # System architecture diagrams
 │   ├── CONFIGURATION.md        # Configuration guide
 │   ├── DATA_FLOW.md            # Data flow documentation
-│   └── QUICK_REFERENCE.md      # Quick reference guide
+│   ├── QUICK_REFERENCE.md      # Quick reference guide
+│   └── WEB_UI.md               # Web GUI (Cluster Image Portal) runbook
 ├── lib/                        # Library modules
 │   ├── common.sh               # Core utilities
 │   ├── crictl.sh               # Worker node operations
 │   ├── harbor.sh               # Harbor API operations
 │   └── output.sh               # Output formatting
-├── tests/                      # Test documentation
+├── web/                        # Web GUI (Cluster Image Portal)
+│   ├── server.py               # Python-stdlib HTTP server (UI + JSON API)
+│   ├── refresh.sh              # Snapshot producer (run by the refresh timer)
+│   ├── static/                 # index.html, style.css, app.js (no build, no CDN)
+│   └── systemd/                # imgcatalog.service + imgcatalog-refresh.{service,timer}
+├── tests/                      # Test documentation + automated unit tests
 │   ├── common_test_cases.md
 │   ├── crictl_test_cases.md
-│   └── harbor_test_cases.md
+│   ├── harbor_test_cases.md
+│   ├── web_test_cases.md       # Manual test cases for the Web GUI
+│   └── test_web_portal.py      # Unit tests for the server's pure logic
 ├── images_to_ignore.txt        # Default ignore list
-├── install.sh                  # Installation script
-├── uninstall.sh                # Uninstallation script
+├── install.sh                  # Installation script (installs CLI + GUI)
+├── uninstall.sh                # Uninstallation script (backs up config first)
 └── README.md                   # This file
 ```
 
@@ -520,6 +579,7 @@ Detailed documentation is available in the `docs/` directory:
 | [DATA_FLOW.md](docs/DATA_FLOW.md) | Data collection, transformation pipeline, and comparison algorithm |
 | [CONFIGURATION.md](docs/CONFIGURATION.md) | Complete configuration guide with examples for different environments |
 | [QUICK_REFERENCE.md](docs/QUICK_REFERENCE.md) | One-page visual guide with command cheat sheet and troubleshooting |
+| [WEB_UI.md](docs/WEB_UI.md) | Web GUI (Cluster Image Portal): architecture, install, the manual firewall step, operate/troubleshoot/rollback |
 
 ### Quick Links
 
@@ -531,6 +591,7 @@ Detailed documentation is available in the `docs/` directory:
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 2.2.0 | 2026-06-30 | Added the optional **Web GUI (Cluster Image Portal)**: read-only web portal + JSON API (systemd producer/consumer), config-driven display text, install/uninstall integration |
 | 2.1.0 | 2025-12-02 | Added ignore file support, `<none>` tag filtering, new display order |
 | 2.0.0 | 2025-11-28 | Complete rewrite in shell with parallel processing |
 | 1.0.0 | 2025-11-27 | Initial Python-based implementation |

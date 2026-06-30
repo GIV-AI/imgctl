@@ -1,0 +1,20 @@
+# ============================================================================
+# imgctl Cluster Image Portal - snapshot producer (root oneshot)
+# Installed to /etc/systemd/system/imgcatalog-refresh.service by install.sh
+# Triggered by imgcatalog-refresh.timer. Runs imgctl and atomically writes
+# the snapshot the (unprivileged) web service reads.
+# ============================================================================
+[Unit]
+Description=imgctl Cluster Image Portal - refresh image snapshot
+Documentation=file:/opt/imgctl/web/refresh.sh
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# Runs as root: needs /etc/imgctl/imgctl.conf (Harbor creds) and SSH to the worker.
+ExecStart=/opt/imgctl/web/refresh.sh
+Nice=10
+IOSchedulingClass=idle
+TimeoutStartSec=180
+# imgctl already serialises its own work; avoid overlapping runs.

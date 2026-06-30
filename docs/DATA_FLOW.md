@@ -1,8 +1,10 @@
 # imgctl - Data Flow & Processing Pipeline
 
-> **Version:** 2.1.0  
+> **Version:** 2.2.0  
 > **Author:** Anubhav Patrick <anubhav.patrick@giindia.com>  
 > **Organization:** Global Info Ventures Pvt Ltd
+
+> **v2.2.0** — the Web GUI's snapshot producer (`web/refresh.sh`) runs this same `imgctl get all -o json` pipeline every ~5 min and atomically writes `/var/lib/imgcatalog/all.json`; the portal server reshapes it into `/api/images`. See [WEB_UI.md](WEB_UI.md).
 
 ---
 

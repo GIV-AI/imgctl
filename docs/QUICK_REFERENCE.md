@@ -2,6 +2,8 @@
 
 > One-page visual guide to imgctl architecture and usage
 
+> **Web GUI (v2.2.0):** browse cluster images in a browser at `http://<head>:8088/` — see [WEB_UI.md](WEB_UI.md). Installed by `sudo ./install.sh`; open the firewall port manually via `cmsh … openports`.
+
 ---
 
 ## System Overview

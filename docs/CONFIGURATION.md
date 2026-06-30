@@ -1,6 +1,6 @@
 # imgctl - Configuration Guide
 
-> **Version:** 2.1.0  
+> **Version:** 2.2.0  
 > **Author:** Anubhav Patrick <anubhav.patrick@giindia.com>  
 > **Organization:** Global Info Ventures Pvt Ltd
 
@@ -15,7 +15,8 @@
 5. [Image Filtering](#image-filtering)
 6. [Performance Tuning](#performance-tuning)
 7. [Logging Configuration](#logging-configuration)
-8. [Example Configurations](#example-configurations)
+8. [Web GUI Configuration](#web-gui-configuration)
+9. [Example Configurations](#example-configurations)
 
 ---
 
@@ -159,6 +160,20 @@ CACHE_DIR="/var/cache/imgctl"
 
 # Cache time-to-live in seconds (5 minutes default)
 CACHE_TTL="300"
+
+# ----------------------------------------------------------------------------
+# WEB GUI ("Cluster Image Portal") -- optional; used by the imgcatalog units
+# ----------------------------------------------------------------------------
+
+WEB_PORT="8088"                                  # portal TCP port (open in firewall manually)
+WEB_BIND_ADDRESS="0.0.0.0"                        # 0.0.0.0 = reachable remotely via the head IP
+WEB_SNAPSHOT_PATH="/var/lib/imgcatalog/all.json"  # producer writes / server reads
+WEB_STALE_AFTER="900"                             # seconds before UI flags data stale
+WEB_HARBOR_REGISTRY_HOST=""                        # blank => derived from HARBOR_URL
+WEB_SITE_TITLE="Cluster Image Portal"             # header title
+WEB_SITE_SUBTITLE=""                              # blank => falls back to CLUSTER_NAME
+WEB_LABEL_HARBOR="Harbor"                          # badge/label for registry images
+WEB_LABEL_NODE="Node"                              # badge/label for worker-cached images
 ```
 
 ---
@@ -414,6 +429,32 @@ grep "abc12345" /var/log/giindia/imgctl/*.log
 
 ---
 
+## Web GUI Configuration
+
+The optional Web GUI (Cluster Image Portal) is configured by the same `imgctl.conf` — it
+reuses imgctl's `HARBOR_URL`, `WORKER_NODES`, and ignore list, so the portal shows exactly
+what the CLI does. All `WEB_*` keys are optional (the server has built-in defaults).
+
+| Key | Default | Purpose |
+|-----|---------|---------|
+| `WEB_PORT` | `8088` | Portal TCP port. **The firewall port is opened manually** (see below). |
+| `WEB_BIND_ADDRESS` | `0.0.0.0` | Listener address; `0.0.0.0` = all interfaces (remote access). |
+| `WEB_SNAPSHOT_PATH` | `/var/lib/imgcatalog/all.json` | Snapshot the producer writes and the server reads. |
+| `WEB_STALE_AFTER` | `900` | Seconds before the UI flags the snapshot stale. |
+| `WEB_HARBOR_REGISTRY_HOST` | _(blank → `HARBOR_URL`)_ | Host prepended to custom/Harbor pull references. |
+| `WEB_SITE_TITLE` | `Cluster Image Portal` | Header title (config-driven; nothing hardcoded). |
+| `WEB_SITE_SUBTITLE` | _(blank → `CLUSTER_NAME`)_ | Header subtitle. |
+| `WEB_LABEL_HARBOR` | `Harbor` | Badge/label for private-registry images. |
+| `WEB_LABEL_NODE` | `Node` | Badge/label for worker-cached images (e.g. `DGX cache`). |
+
+> **Firewall is a manual admin step.** `install.sh`/`uninstall.sh` never modify the firewall.
+> On a BCM head node, open/close the port via `cmsh … roles … use firewall … openports`
+> (never hand-edit `/etc/shorewall/rules`). Full runbook: [WEB_UI.md](./WEB_UI.md).
+
+Apply changes with `sudo /opt/imgctl/web/refresh.sh` (or wait one refresh cycle).
+
+---
+
 ## Example Configurations
 
 ### Small Cluster (2-3 nodes)
@@ -496,6 +537,7 @@ LOG_LEVEL="DEBUG"
 
 - [ARCHITECTURE.md](./ARCHITECTURE.md) - System architecture overview
 - [DATA_FLOW.md](./DATA_FLOW.md) - Data flow documentation
+- [WEB_UI.md](./WEB_UI.md) - Web GUI (Cluster Image Portal) runbook
 - [README.md](../README.md) - Project overview and quick start
 
 ---

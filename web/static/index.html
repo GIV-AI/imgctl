@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <meta name="referrer" content="no-referrer">
+  <title>Cluster Image Portal</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2032%2032'%3E%3Crect%20width='32'%20height='32'%20rx='7'%20fill='%2376B900'/%3E%3Cg%20fill='%231A1A1A'%3E%3Crect%20x='11'%20y='5'%20width='2'%20height='4.5'%20rx='.6'/%3E%3Crect%20x='15'%20y='5'%20width='2'%20height='4.5'%20rx='.6'/%3E%3Crect%20x='19'%20y='5'%20width='2'%20height='4.5'%20rx='.6'/%3E%3Crect%20x='11'%20y='22.5'%20width='2'%20height='4.5'%20rx='.6'/%3E%3Crect%20x='15'%20y='22.5'%20width='2'%20height='4.5'%20rx='.6'/%3E%3Crect%20x='19'%20y='22.5'%20width='2'%20height='4.5'%20rx='.6'/%3E%3Crect%20x='5'%20y='11'%20width='4.5'%20height='2'%20rx='.6'/%3E%3Crect%20x='5'%20y='15'%20width='4.5'%20height='2'%20rx='.6'/%3E%3Crect%20x='5'%20y='19'%20width='4.5'%20height='2'%20rx='.6'/%3E%3Crect%20x='22.5'%20y='11'%20width='4.5'%20height='2'%20rx='.6'/%3E%3Crect%20x='22.5'%20y='15'%20width='4.5'%20height='2'%20rx='.6'/%3E%3Crect%20x='22.5'%20y='19'%20width='4.5'%20height='2'%20rx='.6'/%3E%3Crect%20x='9'%20y='9'%20width='14'%20height='14'%20rx='2.5'/%3E%3C/g%3E%3Cg%20fill='%2376B900'%3E%3Crect%20x='12'%20y='11.6'%20width='8'%20height='2'%20rx='1'/%3E%3Crect%20x='12'%20y='15'%20width='8'%20height='2'%20rx='1'/%3E%3Crect%20x='12'%20y='18.4'%20width='8'%20height='2'%20rx='1'/%3E%3C/g%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to images</a>
+
+  <header class="site-header" role="banner">
+    <div class="bar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" width="40" height="40" focusable="false">
+            <rect width="32" height="32" rx="7" fill="#76B900"></rect>
+            <g fill="#1A1A1A">
+              <rect x="11" y="5" width="2" height="4.5" rx=".6"></rect>
+              <rect x="15" y="5" width="2" height="4.5" rx=".6"></rect>
+              <rect x="19" y="5" width="2" height="4.5" rx=".6"></rect>
+              <rect x="11" y="22.5" width="2" height="4.5" rx=".6"></rect>
+              <rect x="15" y="22.5" width="2" height="4.5" rx=".6"></rect>
+              <rect x="19" y="22.5" width="2" height="4.5" rx=".6"></rect>
+              <rect x="5" y="11" width="4.5" height="2" rx=".6"></rect>
+              <rect x="5" y="15" width="4.5" height="2" rx=".6"></rect>
+              <rect x="5" y="19" width="4.5" height="2" rx=".6"></rect>
+              <rect x="22.5" y="11" width="4.5" height="2" rx=".6"></rect>
+              <rect x="22.5" y="15" width="4.5" height="2" rx=".6"></rect>
+              <rect x="22.5" y="19" width="4.5" height="2" rx=".6"></rect>
+              <rect x="9" y="9" width="14" height="14" rx="2.5"></rect>
+            </g>
+            <g fill="#76B900">
+              <rect x="12" y="11.6" width="8" height="2" rx="1"></rect>
+              <rect x="12" y="15" width="8" height="2" rx="1"></rect>
+              <rect x="12" y="18.4" width="8" height="2" rx="1"></rect>
+            </g>
+          </svg>
+        </span>
+        <span class="brand-divider" aria-hidden="true"></span>
+        <span class="brand-text">
+          <h1 id="site-title" class="brand-title">Cluster Image Portal</h1>
+          <p id="subtitle" class="brand-subtitle">Container image catalog</p>
+        </span>
+      </div>
+
+      <div class="header-actions">
+        <span id="freshness" class="pill" role="status" aria-live="polite" title="">
+          <span class="pill-dot" aria-hidden="true"></span>
+          <span class="pill-text">&nbsp;</span>
+        </span>
+        <button id="refreshBtn" class="btn btn-ghost" type="button" title="Reload the catalog">
+          <svg class="btn-ico" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false">
+            <path d="M20 11a8 8 0 1 0-.6 3" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"></path>
+            <path d="M20 4.5V11h-6.5" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+          <span class="btn-lbl">Refresh</span>
+        </button>
+      </div>
+    </div>
+    <div class="header-accent" aria-hidden="true"></div>
+  </header>
+
+  <main id="main" class="wrap">
+    <!-- Summary metrics (informational only) -->
+    <section class="summary" aria-label="Catalog summary">
+      <div class="metric metric-lead">
+        <span class="metric-num" id="count-total">&mdash;</span>
+        <span class="metric-label">images total</span>
+      </div>
+      <div class="metric">
+        <span class="badge badge-harbor" id="legend-harbor">Harbor</span>
+        <span class="metric-num" id="count-harbor">&mdash;</span>
+        <span class="metric-label">in registry</span>
+      </div>
+      <div class="metric">
+        <span class="badge badge-node" id="legend-node">Node</span>
+        <span class="metric-num" id="count-node">&mdash;</span>
+        <span class="metric-label">cached on worker</span>
+      </div>
+      <div class="metric">
+        <span class="metric-num" id="count-size">&mdash;</span>
+        <span class="metric-label">approx. total size</span>
+      </div>
+    </section>
+
+    <!-- Health / staleness banner -->
+    <div id="banner" class="banner" role="status" hidden></div>
+
+    <!-- Toolbar: the single source filter lives here -->
+    <section class="toolbar" aria-label="Search and filter">
+      <div class="search">
+        <span class="search-ico" aria-hidden="true">&#x1F50D;</span>
+        <label class="visually-hidden" for="search">Search images, tags or references</label>
+        <input id="search" type="search" autocomplete="off" spellcheck="false"
+               placeholder="Search images, tags, references&hellip;">
+        <button id="searchClear" class="search-clear" type="button" aria-label="Clear search" hidden>&times;</button>
+      </div>
+
+      <div class="seg" role="radiogroup" aria-label="Filter by source">
+        <button class="seg-btn is-active" role="radio" aria-checked="true"  data-src="all">All</button>
+        <button class="seg-btn"           role="radio" aria-checked="false" data-src="harbor" id="seg-harbor">Harbor</button>
+        <button class="seg-btn"           role="radio" aria-checked="false" data-src="node" id="seg-node">Node</button>
+      </div>
+
+      <div class="sortwrap">
+        <label class="visually-hidden" for="sort">Sort by</label>
+        <select id="sort" class="select">
+          <option value="default">Sort: Harbor first</option>
+          <option value="name-asc">Name A&ndash;Z</option>
+          <option value="name-desc">Name Z&ndash;A</option>
+          <option value="size-desc">Size (largest)</option>
+          <option value="size-asc">Size (smallest)</option>
+          <option value="source">Source</option>
+        </select>
+      </div>
+
+      <p id="result-count" class="result-count" aria-live="polite"></p>
+    </section>
+
+    <!-- Loading skeleton -->
+    <div id="loading" class="card-surface">
+      <div class="skel-row"></div><div class="skel-row"></div><div class="skel-row"></div>
+      <div class="skel-row"></div><div class="skel-row"></div><div class="skel-row"></div>
+    </div>
+
+    <!-- Table -->
+    <div id="tablewrap" class="card-surface" hidden>
+      <table class="img-table">
+        <thead>
+          <tr>
+            <th scope="col" class="col-source"><button class="th-sort" data-sort="source" type="button">Source</button></th>
+            <th scope="col" class="col-image"><button class="th-sort" data-sort="name" type="button">Image</button></th>
+            <th scope="col" class="col-size"><button class="th-sort" data-sort="size" type="button">Size</button></th>
+            <th scope="col" class="col-copy"><span class="visually-hidden">Copy</span></th>
+          </tr>
+        </thead>
+        <tbody id="img-body"></tbody>
+      </table>
+    </div>
+
+    <!-- Empty / error states -->
+    <div id="empty" class="state-panel" hidden></div>
+    <div id="error" class="state-panel state-error" hidden></div>
+  </main>
+
+  <footer class="site-footer" role="contentinfo">
+    <div class="footer-accent" aria-hidden="true"></div>
+    <div class="footer-grid">
+      <section class="footer-brand">
+        <span class="brand-mark brand-mark-sm" aria-hidden="true">
+          <svg viewBox="0 0 32 32" width="30" height="30" focusable="false">
+            <rect width="32" height="32" rx="7" fill="#76B900"></rect>
+            <g fill="#1A1A1A">
+              <rect x="11" y="5" width="2" height="4.5" rx=".6"></rect>
+              <rect x="15" y="5" width="2" height="4.5" rx=".6"></rect>
+              <rect x="19" y="5" width="2" height="4.5" rx=".6"></rect>
+              <rect x="11" y="22.5" width="2" height="4.5" rx=".6"></rect>
+              <rect x="15" y="22.5" width="2" height="4.5" rx=".6"></rect>
+              <rect x="19" y="22.5" width="2" height="4.5" rx=".6"></rect>
+              <rect x="5" y="11" width="4.5" height="2" rx=".6"></rect>
+              <rect x="5" y="15" width="4.5" height="2" rx=".6"></rect>
+              <rect x="5" y="19" width="4.5" height="2" rx=".6"></rect>
+              <rect x="22.5" y="11" width="4.5" height="2" rx=".6"></rect>
+              <rect x="22.5" y="15" width="4.5" height="2" rx=".6"></rect>
+              <rect x="22.5" y="19" width="4.5" height="2" rx=".6"></rect>
+              <rect x="9" y="9" width="14" height="14" rx="2.5"></rect>
+            </g>
+            <g fill="#76B900">
+              <rect x="12" y="11.6" width="8" height="2" rx="1"></rect>
+              <rect x="12" y="15" width="8" height="2" rx="1"></rect>
+              <rect x="12" y="18.4" width="8" height="2" rx="1"></rect>
+            </g>
+          </svg>
+        </span>
+        <p class="footer-blurb">A read-only catalog of container images available on the
+          cluster &mdash; in the private registry and cached on the GPU worker. Copy a pull
+          reference and you're ready to run.</p>
+      </section>
+
+      <section class="footer-col">
+        <h2 class="footer-h">Getting started</h2>
+        <details class="howto">
+          <summary>How to use these images</summary>
+          <ol>
+            <li>Find the image you need (search or filter by source).</li>
+            <li>Click <strong>Copy</strong> to grab its exact pull reference.</li>
+            <li>Paste it into your workload's <em>Image URL</em> field and submit.</li>
+          </ol>
+        </details>
+      </section>
+
+      <section class="footer-col">
+        <h2 class="footer-h">Source legend</h2>
+        <ul class="legend-list">
+          <li><span class="badge badge-harbor" id="legend-harbor-2">Harbor</span>
+            <span class="legend-desc">Custom image in the private registry (head node).</span></li>
+          <li><span class="badge badge-node" id="legend-node-2">Node</span>
+            <span class="legend-desc">Public/NGC image cached on the GPU worker.</span></li>
+        </ul>
+      </section>
+    </div>
+
+    <div class="footer-meta">
+      <span class="meta-left">Read-only &bull; <span id="foot-url" class="meta-host">cluster</span> &bull; refreshes automatically</span>
+      <span class="meta-right"><span class="meta-dot" aria-hidden="true"></span> Live catalog</span>
+    </div>
+  </footer>
+
+  <!-- Copy fallback popover -->
+  <div id="copyPopover" class="popover" hidden role="dialog" aria-label="Copy image reference">
+    <p>Press <kbd>Ctrl</kbd>+<kbd>C</kbd> to copy:</p>
+    <input id="copyPopoverInput" type="text" readonly>
+    <button id="copyPopoverClose" class="btn btn-ghost" type="button">Close</button>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+  <div id="sr-live" class="visually-hidden" aria-live="polite"></div>
+
+  <script src="app.js" defer></script>
+</body>
+</html>

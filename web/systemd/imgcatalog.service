@@ -1,0 +1,54 @@
+# ============================================================================
+# imgctl Cluster Image Portal - web service (UNPRIVILEGED)
+# Installed to /etc/systemd/system/imgcatalog.service by install.sh
+# Serves the UI + JSON API; only READS the snapshot. Never runs imgctl/SSH.
+# ============================================================================
+[Unit]
+Description=imgctl Cluster Image Portal (web UI + JSON API)
+Documentation=file:/opt/imgctl/web
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# Ephemeral non-root user; everything the server reads is world-readable.
+DynamicUser=yes
+ExecStart=/usr/bin/python3 /opt/imgctl/web/server.py
+Restart=always
+RestartSec=2
+
+# --- configuration (non-secret; the registry host comes from the snapshot) ---
+Environment=WEB_PORT=8088
+Environment=WEB_BIND_ADDRESS=0.0.0.0
+Environment=WEB_SNAPSHOT_PATH=/var/lib/imgcatalog/all.json
+Environment=WEB_STALE_AFTER=900
+Environment=WEB_STATIC_DIR=/opt/imgctl/web/static
+
+# --- sandboxing / least privilege ---
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectControlGroups=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+RestrictAddressFamilies=AF_INET AF_INET6
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+
+# --- resource caps: a leak/DoS can never starve CMDaemon/Harbor/BIND/kubectl ---
+MemoryMax=256M
+CPUQuota=50%
+TasksMax=64
+
+[Install]
+WantedBy=multi-user.target

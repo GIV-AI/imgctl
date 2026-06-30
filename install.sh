@@ -206,16 +206,26 @@ ln -sf -- "$INSTALL_DIR/bin/imgctl" "$BIN_DIR/$COMMAND_NAME"
 
 echo -e "${GREEN}✓${NC} Symlink created: $BIN_DIR/$COMMAND_NAME"
 
-# Install configuration (always overwrite for clean install)
+# Install configuration -- PRESERVE an existing tuned config; never clobber it.
 echo -e "${BLUE}[6/7]${NC} Installing configuration..."
 
-copy_file "$CONFIG_DIR/imgctl.conf" "${SCRIPT_DIR}/conf/imgctl.conf" || exit 1
-chmod 640 "$CONFIG_DIR/imgctl.conf"
-echo -e "${GREEN}✓${NC} Configuration installed"
-echo -e "${YELLOW}!${NC} Please edit $CONFIG_DIR/imgctl.conf with your cluster details"
+if [[ -f "$CONFIG_DIR/imgctl.conf" ]]; then
+    cfg_bak="$CONFIG_DIR/imgctl.conf.bak.$(date +%Y%m%d-%H%M%S)"
+    cp -f -- "$CONFIG_DIR/imgctl.conf" "$cfg_bak"
+    echo -e "${GREEN}✓${NC} Existing configuration preserved (backup: $cfg_bak)"
+    echo -e "${YELLOW}!${NC} Not overwriting $CONFIG_DIR/imgctl.conf — if upgrading, add any new WEB_* keys from conf/imgctl.conf"
+else
+    copy_file "$CONFIG_DIR/imgctl.conf" "${SCRIPT_DIR}/conf/imgctl.conf" || exit 1
+    chmod 640 "$CONFIG_DIR/imgctl.conf"
+    echo -e "${GREEN}✓${NC} Configuration installed"
+    echo -e "${YELLOW}!${NC} Please edit $CONFIG_DIR/imgctl.conf with your cluster details"
+fi
 
-# Copy ignore file (always overwrite for clean install)
-if [[ -f "${SCRIPT_DIR}/images_to_ignore.txt" ]] && [[ ! -L "${SCRIPT_DIR}/images_to_ignore.txt" ]]; then
+# Install ignore list -- PRESERVE an existing curated list; never clobber it.
+if [[ -f "$CONFIG_DIR/images_to_ignore.txt" ]]; then
+    cp -f -- "$CONFIG_DIR/images_to_ignore.txt" "$CONFIG_DIR/images_to_ignore.txt.bak.$(date +%Y%m%d-%H%M%S)"
+    echo -e "${GREEN}✓${NC} Existing ignore list preserved (backed up)"
+elif [[ -f "${SCRIPT_DIR}/images_to_ignore.txt" ]] && [[ ! -L "${SCRIPT_DIR}/images_to_ignore.txt" ]]; then
     cp -f -- "${SCRIPT_DIR}/images_to_ignore.txt" "$CONFIG_DIR/images_to_ignore.txt"
     chmod 644 "$CONFIG_DIR/images_to_ignore.txt"
     echo -e "${GREEN}✓${NC} Ignore list installed"
@@ -286,3 +296,58 @@ echo "  imgctl get nodes        # Get node images only"
 echo "  imgctl compare          # Compare images across nodes"
 echo "  imgctl help             # Show full help"
 echo ""
+
+# ============================================================================
+# WEB GUI ("Cluster Image Portal") -- optional component (skip with --no-gui)
+# ============================================================================
+INSTALL_GUI="yes"
+[[ "${1:-}" == "--no-gui" ]] && INSTALL_GUI="no"
+
+if [[ "$INSTALL_GUI" == "yes" && -d "${SCRIPT_DIR}/web" ]]; then
+    echo -e "${BOLD}${BLUE}Installing Web GUI (Cluster Image Portal)...${NC}"
+
+    WEB_DIR="$INSTALL_DIR/web"
+    STATE_DIR="/var/lib/imgcatalog"
+    SYSTEMD_DIR="/etc/systemd/system"
+
+    mkdir -p "$WEB_DIR/static"
+    cp -f -- "${SCRIPT_DIR}/web/server.py"  "$WEB_DIR/server.py"
+    cp -f -- "${SCRIPT_DIR}/web/refresh.sh" "$WEB_DIR/refresh.sh"
+    cp -f -- "${SCRIPT_DIR}/web/static/"*   "$WEB_DIR/static/"
+    chmod 755 "$WEB_DIR/server.py" "$WEB_DIR/refresh.sh"
+    chmod 644 "$WEB_DIR/static/"*
+    echo -e "${GREEN}✓${NC} Portal files installed to $WEB_DIR"
+
+    # Snapshot dir: root writes it; world-readable so the unprivileged web user can read.
+    mkdir -p "$STATE_DIR"; chown root:root "$STATE_DIR"; chmod 755 "$STATE_DIR"
+
+    if command -v systemctl >/dev/null 2>&1; then
+        cp -f -- "${SCRIPT_DIR}/web/systemd/imgcatalog.service"         "$SYSTEMD_DIR/"
+        cp -f -- "${SCRIPT_DIR}/web/systemd/imgcatalog-refresh.service" "$SYSTEMD_DIR/"
+        cp -f -- "${SCRIPT_DIR}/web/systemd/imgcatalog-refresh.timer"   "$SYSTEMD_DIR/"
+        systemctl daemon-reload
+        "$WEB_DIR/refresh.sh" || echo -e "${YELLOW}!${NC} Initial snapshot refresh failed (the timer will retry)"
+        systemctl enable --now imgcatalog-refresh.timer >/dev/null 2>&1 || true
+        systemctl enable --now imgcatalog.service       >/dev/null 2>&1 || true
+        echo -e "${GREEN}✓${NC} Services enabled: imgcatalog.service + imgcatalog-refresh.timer"
+    else
+        echo -e "${YELLOW}!${NC} systemctl not found; units copied but not enabled"
+    fi
+
+    WEB_PORT_MSG="8088"
+    if [[ -f "$CONFIG_DIR/imgctl.conf" ]]; then
+        p="$(grep -E '^WEB_PORT=' "$CONFIG_DIR/imgctl.conf" 2>/dev/null | tail -1 | cut -d'"' -f2 || true)"
+        [[ -n "$p" ]] && WEB_PORT_MSG="$p"
+    fi
+
+    echo ""
+    echo -e "${BOLD}${YELLOW}ACTION REQUIRED — open the firewall port (manual admin step):${NC}"
+    echo "  The portal listens on TCP ${WEB_PORT_MSG}. This installer does NOT touch the firewall."
+    echo "  On a BCM head node, open the port with cmsh (do NOT hand-edit /etc/shorewall/rules):"
+    echo -e "    ${CYAN}cmsh${NC}"
+    echo -e "    ${CYAN}% device; use \$(hostname -s); roles; use firewall${NC}"
+    echo -e "    ${CYAN}% openports; add ACCEPT net ${WEB_PORT_MSG} tcp fw; commit${NC}"
+    echo "  Then browse to:  http://<head-node-host-or-ip>:${WEB_PORT_MSG}/"
+    echo "  (Full details in README.md and docs/WEB_UI.md.)"
+    echo ""
+fi

@@ -1,9 +1,11 @@
 # imgctl - System Architecture Documentation
 
-> **Version:** 2.1.0  
+> **Version:** 2.2.0  
 > **Author:** Anubhav Patrick <anubhav.patrick@giindia.com>  
 > **Organization:** Global Info Ventures Pvt Ltd  
-> **Last Updated:** December 2025
+> **Last Updated:** June 2026
+
+> **v2.2.0** adds an optional **[Web GUI — Cluster Image Portal](WEB_UI.md)**: a read-only web portal + JSON API that reuses this same pipeline, served on the head node by a decoupled systemd producer/consumer (`imgcatalog-refresh.timer` → snapshot → unprivileged `imgcatalog.service`).
 
 ---
 
