@@ -211,8 +211,9 @@ echo -e "${BLUE}[6/7]${NC} Installing configuration..."
 
 if [[ -f "$CONFIG_DIR/imgctl.conf" ]]; then
     cfg_bak="$CONFIG_DIR/imgctl.conf.bak.$(date +%Y%m%d-%H%M%S)"
-    cp -f -- "$CONFIG_DIR/imgctl.conf" "$cfg_bak"
-    echo -e "${GREEN}✓${NC} Existing configuration preserved (backup: $cfg_bak)"
+    cp -p -f -- "$CONFIG_DIR/imgctl.conf" "$cfg_bak"
+    chmod 600 "$cfg_bak"   # config holds HARBOR_PASSWORD — never leave the backup world-readable
+    echo -e "${GREEN}✓${NC} Existing configuration preserved (backup: $cfg_bak, mode 600)"
     echo -e "${YELLOW}!${NC} Not overwriting $CONFIG_DIR/imgctl.conf — if upgrading, add any new WEB_* keys from conf/imgctl.conf"
 else
     copy_file "$CONFIG_DIR/imgctl.conf" "${SCRIPT_DIR}/conf/imgctl.conf" || exit 1

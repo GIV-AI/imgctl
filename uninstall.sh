@@ -126,9 +126,10 @@ echo ""
 BACKUP_DIR="/var/backups/imgctl/$(date +%Y%m%d-%H%M%S)"
 if [[ -f "$CONFIG_DIR/imgctl.conf" || -f "$CONFIG_DIR/images_to_ignore.txt" ]]; then
     mkdir -p "$BACKUP_DIR"
-    [[ -f "$CONFIG_DIR/imgctl.conf" ]] && cp -f -- "$CONFIG_DIR/imgctl.conf" "$BACKUP_DIR/"
-    [[ -f "$CONFIG_DIR/images_to_ignore.txt" ]] && cp -f -- "$CONFIG_DIR/images_to_ignore.txt" "$BACKUP_DIR/"
-    echo -e "${GREEN}✓${NC} Backed up config + ignore list to: ${BOLD}$BACKUP_DIR${NC}"
+    chmod 700 /var/backups/imgctl "$BACKUP_DIR" 2>/dev/null || true
+    [[ -f "$CONFIG_DIR/imgctl.conf" ]] && { cp -p -f -- "$CONFIG_DIR/imgctl.conf" "$BACKUP_DIR/"; chmod 600 "$BACKUP_DIR/imgctl.conf"; }
+    [[ -f "$CONFIG_DIR/images_to_ignore.txt" ]] && cp -p -f -- "$CONFIG_DIR/images_to_ignore.txt" "$BACKUP_DIR/"
+    echo -e "${GREEN}✓${NC} Backed up config + ignore list to: ${BOLD}$BACKUP_DIR${NC} (root-only)"
 fi
 
 # --- Tear down the Web GUI (stop services first, then remove units + state) ---
