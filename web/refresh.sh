@@ -62,9 +62,11 @@ fi
 SZ="$(stat -c %s "$RAW" 2>/dev/null || echo 0)"
 [[ "$SZ" -ge 2 ]] || { log "imgctl output empty; keeping last-good snapshot"; exit 1; }
 
-# 3) Inject harbor_host + cluster_name for the web tier.
+# 3) Inject harbor_host + cluster_name + config-driven display text for the web tier.
 if ! jq --arg h "$HOST" --arg c "$CLUSTER" \
-        '. + {harbor_host: $h, cluster_name: $c}' "$RAW" >"$FINAL" 2>/dev/null; then
+        --arg t "$TITLE" --arg s "$SUBTITLE" --arg lh "$LABEL_HARBOR" --arg ln "$LABEL_NODE" \
+        '. + {harbor_host: $h, cluster_name: $c, site_title: $t, site_subtitle: $s, label_harbor: $lh, label_node: $ln}' \
+        "$RAW" >"$FINAL" 2>/dev/null; then
     log "failed to annotate snapshot; keeping last-good snapshot"
     exit 1
 fi
